@@ -74,15 +74,6 @@
         .attr("width", 200)
         .attr("height", cHSvg + cPaddingBottom);
 
-      const vActive = {
-        activeState: -1,
-        set setActive(val) {
-          this.aInternal = val;
-        },
-        get getActive() {
-          return this.activeState;
-        },
-      };
       let vFetchData = [],
         vCurrentSelect = "kickstarter";
 
@@ -96,7 +87,7 @@
 
       //tooltip
       let tooltip = d3.select("body").append("div");
-      
+
       function fEnableButton() {
         let eEl = document.getElementsByClassName("btn");
 
@@ -236,12 +227,7 @@
               .attr("height", vLegendWidth)
               .attr("x", (d, i) => 0)
               .attr("y", (d, i) => vYScale(i))
-              .on("mouseover", (d, i) => {
-                vActive.setActive = i;
-              })
-              .on("mouseout", () => {
-                vActive.setActive = -1;
-              });
+              ;
             legend
               .selectAll("text")
               .data(vColor)
@@ -253,12 +239,7 @@
               .text((d, i) => {
                 return vFetchData.children[i].name;
               })
-              .on("mouseover", (d, i) => {
-                vActive.setActive = i;
-              })
-              .on("mouseout", () => {
-                vActive.setActive = -1;
-              });
+              
           })
           .catch((error) => console.log(error));
       }

@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tree Map</title>
+    <link rel="stylesheet" type="text/css" href="./css/index.css" />
+    <script src="//d3js.org/d3.v4.min.js" charset="utf-8"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-color@3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-interpolate@3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-scale-chromatic@3"></script>
+    <script
+      type="text/javascript"
+      src="https://cdn.freecodecamp.org/testable-projects-fcc/v1/bundle.js"
+      defer
+    ></script>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root">
+      <div class="container" id="title-container">
+        <div id="selection" class="container">
+          <button class="btn" onclick="fSetData()" id="kickstarter">
+            Kickstarter dataset
+          </button>
+          <button class="btn" onclick="fSetData()" id="movie">
+            Movie dataset
+          </button>
+          <button class="btn" onclick="fSetData()" id="game">
+            Video game dataset
+          </button>
+        </div>
+        <h1 id="title"></h1>
+        <h2 id="description"></h2>
+      </div>
+      <div class="container" id="graph-container"></div>
+    </div>
+    <script type="text/javascript">
+      const DATA = {
+        kickstarter: {
+          url: "https://cdn.freecodecamp.org/testable-projects-fcc/data/tree_map/kickstarter-funding-data.json",
+          name: "Kickstarter",
+          description: "Top 100 Most Funded Project",
+        },
+        movie: {
+          url: "https://cdn.freecodecamp.org/testable-projects-fcc/data/tree_map/movie-data.json",
+          name: "Movie Sales",
+          description: "Top 100 Movies with Most Sold Ticket ",
+        },
+        game: {
+          url: "https://cdn.freecodecamp.org/testable-projects-fcc/data/tree_map/video-game-sales-data.json",
+          name: "Video Game Sales",
+          description: "Top 100 Most Sold Video Games Grouped by Platform",
+        },
+      };
+
+      const cWSvg = 1300,
+        cHSvg = 500,
+        cPaddingLeft = 60,
+        cPaddingBottom = 50,
+        cLegendWidth = 50;
+
+      const graph = d3
+        .select("#graph-container")
+        .append("svg")
+        .attr("width", cWSvg + cPaddingLeft)
+        .attr("height", cHSvg + cPaddingBottom)
+        .attr("id", "graph");
+
+      const legend = d3
+        .select("#graph-container")
+        .append("svg")
+        .attr("id", "legend")
+        .attr("width", 200)
+        .attr("height", cHSvg + cPaddingBottom);
+
+      const vActive = {
+        activeState: -1,
+        set setActive(val) {
+          this.aInternal = val;
+        },
+        get getActive() {
+          return this.activeState;
+        },
+      };
+      let vFetchData = [],
+        vCurrentSelect = "kickstarter";
+
+      function fSetData() {
+        let vTarget = this.event.target;
+        if (vCurrentSelect != vTarget.id) {
+          vCurrentSelect = vTarget.id;
+          fFetchData(vCurrentSelect);
+        }
+      }
+
+      //tooltip
+      let tooltip = d3.select("body").append("div");
+      
+      function fEnableButton() {
+        let eEl = document.getElementsByClassName("btn");
+
+        Array.from(eEl).forEach((element) => {
+          if (element.id == vCurrentSelect) {
+            element.disabled = true;
+          } else {
+            element.disabled = false;
+          }
+        });
+      }
+
+      fFetchData(vCurrentSelect);
+      function fFetchData(id) {
+        fEnableButton();
+
+        fetch(DATA[id].url)
+          .then((resp) => resp.json())
+          .then((result) => {
+            vFetchData = result;
+
+            graph.select("g").remove();
+            //title & description insertion
+            let eTitle = document.getElementById("title"),
+              eDescription = document.getElementById("description");
+            eTitle.innerHTML = DATA[id].name;
+            eDescription.innerHTML = DATA[id].description;
+
+            //data transform for treemap
+            let vRoot = d3.hierarchy(vFetchData).sum((d) => {
+              return d.value;
+            });
+            d3.treemap().size([cWSvg, cHSvg])(vRoot);
+
+            //color processing
+            let vDataLength = vFetchData.children.length;
+            let vColor = [];
+            for (let i = 0; i < vDataLength; i++) {
+              vColor.push(d3.interpolateSpectral((1 / (vDataLength - 1)) * i));
+            }
+
+            graph
+              .append("g")
+              .selectAll("rect")
+              .data(vRoot.leaves())
+              .enter()
+              .append("rect")
+              .attr("data-name", (d) => {
+                return d.data.name;
+              })
+              .attr("data-value", (d) => {
+                return d.data.value;
+              })
+              .attr("data-category", (d) => {
+                return d.parent.data.name;
+              })
+              .attr("class", "tile")
+              .attr("fill", (d, i) => {
+                if (vActive.getActive == -1) {
+                  let tCategory = d.parent.data.name;
+                  let tColorCode;
+                  vFetchData.children.forEach((item, i) => {
+                    if (item.name == tCategory) tColorCode = vColor[i];
+                  });
+                  return tColorCode;
+                } else {
+                  console.log(vActive.activeState);
+                }
+              })
+              .attr("x", (d) => {
+                return d.x0 + 0;
+              })
+              .attr("y", (d) => {
+                return d.y0 + 0;
+              })
+              .attr("width", (d) => {
+                return d.x1 - d.x0;
+              })
+              .attr("height", (d) => {
+                return d.y1 - d.y0;
+              })
+              .style("stroke", "black")
+              .on("mouseover", (d) => {
+                tooltip
+                  .transition()
+                  .duration(0)
+                  .style("opacity", 0.9)
+                  .style("z-index", +2);
+                tooltip.append("h4");
+              })
+              .on("mousemove", (d) => {
+                tooltip
+                  .attr("id", "tooltip")
+                  .attr("data-value", d.data.value)
+                  .style("left", () => {
+                    return window.event.clientX + 20 + "px";
+                  })
+                  .style("top", window.event.clientY - 10 + "px")
+                  .html(
+                    `Name: <b>${d.data.name}</b><br>Category: <b>${
+                      d.data.category
+                    }</b><br>Value: <b>$${
+                      vCurrentSelect != "game"
+                        ? (parseInt(d.data.value) / 1000000).toFixed(1)
+                        : d.data.value
+                    } million</b> `
+                  )
+                  .style("overflow", "hidden")
+                  .style("text-overflow", "ellipsis");
+              })
+              .on("mouseout", (d) => {
+                tooltip
+                  .transition()
+                  .duration(10)
+                  .style("z-index", 0)
+                  .style("opacity", 0);
+                tooltip.selectAll("h4").remove();
+              });
+
+            legend.selectAll("rect").remove();
+            legend.selectAll("text").remove();
+
+            let vYScale = d3
+              .scaleLinear()
+              .domain([0, vDataLength])
+              .range([0, cHSvg]);
+
+            let vLegendWidth = Math.floor(vYScale(1)) - 5;
+            legend
+              .selectAll("rect")
+              .data(vColor)
+              .enter()
+              .append("rect")
+              .attr("class", "legend-item")
+              .attr("fill", (d) => d)
+              .attr("width", vLegendWidth)
+              .attr("height", vLegendWidth)
+              .attr("x", (d, i) => 0)
+              .attr("y", (d, i) => vYScale(i))
+              .on("mouseover", (d, i) => {
+                vActive.setActive = i;
+              })
+              .on("mouseout", () => {
+                vActive.setActive = -1;
+              });
+            legend
+              .selectAll("text")
+              .data(vColor)
+              .enter()
+              .append("text")
+              .attr("id", "legend-text")
+              .attr("x", (d, i) => vLegendWidth + 15)
+              .attr("y", (d, i) => vYScale(i) + vLegendWidth / 2 + 8)
+              .text((d, i) => {
+                return vFetchData.children[i].name;
+              })
+              .on("mouseover", (d, i) => {
+                vActive.setActive = i;
+              })
+              .on("mouseout", () => {
+                vActive.setActive = -1;
+              });
+          })
+          .catch((error) => console.log(error));
+      }
+    </script>
+  </body>
+</html>

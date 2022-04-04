@@ -146,16 +146,12 @@
               })
               .attr("class", "tile")
               .attr("fill", (d, i) => {
-                if (vActive.getActive == -1) {
-                  let tCategory = d.parent.data.name;
-                  let tColorCode;
-                  vFetchData.children.forEach((item, i) => {
-                    if (item.name == tCategory) tColorCode = vColor[i];
-                  });
-                  return tColorCode;
-                } else {
-                  console.log(vActive.activeState);
-                }
+                let tCategory = d.parent.data.name;
+                let tColorCode;
+                vFetchData.children.forEach((item, i) => {
+                  if (item.name == tCategory) tColorCode = vColor[i];
+                });
+                return tColorCode;
               })
               .attr("x", (d) => {
                 return d.x0 + 0;
@@ -226,8 +222,7 @@
               .attr("width", vLegendWidth)
               .attr("height", vLegendWidth)
               .attr("x", (d, i) => 0)
-              .attr("y", (d, i) => vYScale(i))
-              ;
+              .attr("y", (d, i) => vYScale(i));
             legend
               .selectAll("text")
               .data(vColor)
@@ -238,8 +233,7 @@
               .attr("y", (d, i) => vYScale(i) + vLegendWidth / 2 + 8)
               .text((d, i) => {
                 return vFetchData.children[i].name;
-              })
-              
+              });
           })
           .catch((error) => console.log(error));
       }

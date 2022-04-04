@@ -86,7 +86,10 @@
       }
 
       //tooltip
-      let tooltip = d3.select("body").append("div");
+      let tooltip = d3
+        .select("body")
+        .append("div")
+        .attr("id", "tooltip-container");
 
       function fEnableButton() {
         let eEl = document.getElementsByClassName("btn");
@@ -153,6 +156,14 @@
                 });
                 return tColorCode;
               })
+              .attr("color-code", (d, i) => {
+                let tCategory = d.parent.data.name;
+                let tColorCode;
+                vFetchData.children.forEach((item, i) => {
+                  if (item.name == tCategory) tColorCode = vColor[i];
+                });
+                return tColorCode;
+              })
               .attr("x", (d) => {
                 return d.x0 + 0;
               })
@@ -212,6 +223,8 @@
               .range([0, cHSvg]);
 
             let vLegendWidth = Math.floor(vYScale(1)) - 5;
+            let vTiles = document.querySelectorAll("rect[data-category]");
+
             legend
               .selectAll("rect")
               .data(vColor)
@@ -222,7 +235,25 @@
               .attr("width", vLegendWidth)
               .attr("height", vLegendWidth)
               .attr("x", (d, i) => 0)
-              .attr("y", (d, i) => vYScale(i));
+              .attr("y", (d, i) => vYScale(i))
+              .on("mouseover", (d, i) => {
+                vTiles.forEach((item, index) => {
+                  if (
+                    item.attributes["data-category"].value !=
+                    vFetchData.children[i].name
+                  ) {
+                    item.setAttribute("fill", "whitesmoke");
+                  }
+                });
+              })
+              .on("mouseout", (d, i) => {
+                vTiles.forEach((item, index) => {
+                  item.setAttribute(
+                    "fill",
+                    item.attributes["color-code"].value
+                  );
+                });
+              });
             legend
               .selectAll("text")
               .data(vColor)
@@ -233,6 +264,24 @@
               .attr("y", (d, i) => vYScale(i) + vLegendWidth / 2 + 8)
               .text((d, i) => {
                 return vFetchData.children[i].name;
+              })
+              .on("mouseover", (d, i) => {
+                vTiles.forEach((item, index) => {
+                  if (
+                    item.attributes["data-category"].value !=
+                    vFetchData.children[i].name
+                  ) {
+                    item.setAttribute("fill", "whitesmoke");
+                  }
+                });
+              })
+              .on("mouseout", (d, i) => {
+                vTiles.forEach((item, index) => {
+                  item.setAttribute(
+                    "fill",
+                    item.attributes["color-code"].value
+                  );
+                });
               });
           })
           .catch((error) => console.log(error));
